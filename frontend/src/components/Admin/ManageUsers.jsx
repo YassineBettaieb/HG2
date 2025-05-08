@@ -49,8 +49,10 @@ const EditUserModal = ({ user, isOpen, onClose, onSave }) => {
             onChange={handleChange}
           />
         </label>
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onClose}>Close</button>
+        <div className="modal-buttons">
+          <button className="save-btn" onClick={handleSave}>Save</button>
+          <button className="close-btn" onClick={onClose}>Close</button>
+        </div>
       </div>
     </div>
   ) : null;
@@ -82,9 +84,17 @@ export const ManageUsers = () => {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 5;
 
   const filteredUsers = allUsers.filter((user) =>
     user.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const currentUsers = filteredUsers.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
   );
 
   const handleEditUser = (user) => {
@@ -93,7 +103,7 @@ export const ManageUsers = () => {
   };
 
   const handleSaveUser = (updatedUser) => {
-    // Logic to save the updated user (this could be an API call or state update)
+    // In a real app, this would update the state or make an API call
     console.log("User updated:", updatedUser);
   };
 
@@ -102,7 +112,7 @@ export const ManageUsers = () => {
       <style>{`
         .manage-users-container {
           padding: 120px 20px 40px;
-          background-color:rgb(253, 243, 225);
+          background-color: rgb(253, 243, 225);
           min-height: 100vh;
         }
 
@@ -142,7 +152,7 @@ export const ManageUsers = () => {
         }
 
         .user-table th {
-          background-color:rgb(211, 95, 95);
+          background-color: rgb(211, 95, 95);
           color: white;
           font-weight: bold;
         }
@@ -191,11 +201,17 @@ export const ManageUsers = () => {
         /* Navbar Styles */
         .navbar {
           background-color: #222;
+          position: fixed;
+          width: 100%;
+          top: 0;
+          z-index: 1000;
         }
 
         .navbar-brand {
           font-weight: bold;
           font-size: 20px;
+          color: white;
+          text-decoration: none;
         }
 
         /* Modal Styles */
@@ -209,7 +225,7 @@ export const ManageUsers = () => {
           display: flex;
           justify-content: center;
           align-items: center;
-          z-index: 999;
+          z-index: 1001;
         }
 
         .modal-content {
@@ -221,51 +237,83 @@ export const ManageUsers = () => {
           box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
+        .modal label {
+          display: block;
+          margin-top: 10px;
+          font-weight: bold;
+        }
+
         .modal input {
           width: 100%;
           padding: 8px;
-          margin: 10px 0;
+          margin: 5px 0 15px;
           border-radius: 5px;
           border: 1px solid #ccc;
+        }
+
+        .modal-buttons {
+          display: flex;
+          justify-content: flex-end;
+          gap: 10px;
         }
 
         .modal button {
           padding: 10px 20px;
           border: none;
-          background-color: #007bff;
-          color: white;
           cursor: pointer;
           border-radius: 5px;
-          margin: 10px 0;
         }
 
-        .modal button:hover {
-          background-color: #0056b3;
+        .save-btn {
+          background-color: #007bff;
+          color: white;
+        }
+
+        .close-btn {
+          background-color: #6c757d;
+          color: white;
+        }
+
+        /* Pagination Styles */
+        .pagination {
+          display: flex;
+          justify-content: center;
+          margin-top: 20px;
+          gap: 10px;
+        }
+
+        .pagination button {
+          padding: 8px 14px;
+          border-radius: 5px;
+          border: 1px solid #00bcd4;
+          background: white;
+          color: #00bcd4;
+          cursor: pointer;
+        }
+
+        .pagination button.active {
+          background: #00bcd4;
+          color: white;
+        }
+
+        .pagination button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
         /* Responsive Styles */
         @media (max-width: 768px) {
           .manage-users-container {
-            padding: 60px 10px 40px;
+            padding: 100px 10px 40px;
           }
 
           .modal-content {
             width: 90%;
-            max-width: none;
           }
 
           .user-table th, .user-table td {
             font-size: 14px;
             padding: 10px;
-          }
-
-          .search-bar input {
-            font-size: 14px;
-          }
-
-          .modal input {
-            padding: 10px;
-            font-size: 14px;
           }
         }
 
@@ -274,56 +322,36 @@ export const ManageUsers = () => {
             font-size: 22px;
           }
 
-          .profile-img {
-            width: 35px;
-            height: 35px;
-          }
-
           .user-table th, .user-table td {
             padding: 8px;
             font-size: 12px;
           }
 
+          .modal-buttons {
+            flex-direction: column;
+          }
+
           .modal button {
-            padding: 8px 16px;
+            width: 100%;
           }
         }
       `}</style>
 
       {/* Navbar */}
-      <nav id="menu" className="navbar navbar-default navbar-fixed-top">
+      <nav className="navbar">
         <div className="container">
           <div className="navbar-header">
-            <button
-              type="button"
-              className="navbar-toggle collapsed"
-              data-toggle="collapse"
-              data-target="#bs-example-navbar-collapse-1"
-            >
-              <span className="sr-only">Toggle navigation</span>
-              <span className="icon-bar"></span>
-              <span className="icon-bar"></span>
-              <span className="icon-bar"></span>
-            </button>
-            <a className="navbar-brand page-scroll" href="/admin">
+            <a className="navbar-brand" href="/admin">
               HajjemGo
             </a>
           </div>
-          <div
-            className="collapse navbar-collapse"
-            id="bs-example-navbar-collapse-1"
-          >
-            <ul className="nav navbar-nav navbar-right">
-              <li>
-                <a href="/ProfileA" className="page-scroll">
-                  <i
-                    className="fa fa-user"
-                    style={{ fontSize: "20px", color: "red" }}
-                  ></i>
-                </a>
-              </li>
-            </ul>
-          </div>
+          <ul className="nav navbar-nav navbar-right">
+            <li>
+              <a href="/ProfileA">
+                <i className="fa fa-user" style={{ fontSize: "20px", color: "red" }}></i>
+              </a>
+            </li>
+          </ul>
         </div>
       </nav>
 
@@ -337,82 +365,105 @@ export const ManageUsers = () => {
             type="text"
             placeholder="Search users by name..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </div>
 
-        {filteredUsers.length > 0 ? (
-          <table className="user-table">
-            <thead>
-              <tr>
-                <th>Profile</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>E-mail</th>
-                <th>Appointments</th>
-                <th>Actions</th>
-                <th>
-                  <FaTrash />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id}>
-                  <td>
-                    <div className="profile-info">
-                      <img
-                        className="profile-img"
-                        src={user.image || "https://via.placeholder.com/40"}
-                        alt={user.name}
-                      />
-                      <span>{user.name}</span>
-                    </div>
-                  </td>
-                  <td>{user.name}</td>
-                  <td>{user.phone}</td>
-                  <td>{user.email}</td>
-                  <td>
-                    {user.appointments.map((a, idx) => (
-                      <span key={idx} className={`status-badge ${a.status}`}>
-                        {a.status}
-                      </span>
-                    ))}
-                  </td>
-                  <td>
-                    <button
-                      className="edit-btn"
-                      onClick={() => handleEditUser(user)}
-                    >
-                      <FaPen />
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className="delete-btn"
-                      onClick={() => alert(`Delete user ${user.name}`)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
+        {currentUsers.length > 0 ? (
+          <>
+            <table className="user-table">
+              <thead>
+                <tr>
+                  <th>Profile</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>E-mail</th>
+                  <th>Appointments</th>
+                  <th>Actions</th>
                 </tr>
+              </thead>
+              <tbody>
+                {currentUsers.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      <div className="profile-info">
+                        <img
+                          className="profile-img"
+                          src={user.image || "https://via.placeholder.com/40"}
+                          alt={user.name}
+                        />
+                      </div>
+                    </td>
+                    <td>{user.name}</td>
+                    <td>{user.phone}</td>
+                    <td>{user.email}</td>
+                    <td>
+                      {user.appointments.map((a, idx) => (
+                        <span key={idx} className={`status-badge ${a.status}`}>
+                          {a.status}
+                        </span>
+                      ))}
+                    </td>
+                    <td>
+                      <button
+                        className="edit-btn"
+                        onClick={() => handleEditUser(user)}
+                        aria-label="Edit user"
+                      >
+                        <FaPen />
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => alert(`Delete user ${user.name}`)}
+                        aria-label="Delete user"
+                      >
+                        <FaTrash />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="pagination">
+              <button
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+              >
+                Prev
+              </button>
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentPage(index + 1)}
+                  className={currentPage === index + 1 ? "active" : ""}
+                >
+                  {index + 1}
+                </button>
               ))}
-            </tbody>
-          </table>
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
+          </>
         ) : (
           <p style={{ textAlign: "center" }}>No users found.</p>
         )}
       </div>
 
       {/* Edit User Modal */}
-      {selectedUser && (
-        <EditUserModal
-          user={selectedUser}
-          isOpen={isModalOpen}
-          onClose={() => setModalOpen(false)}
-          onSave={handleSaveUser}
-        />
-      )}
+      <EditUserModal
+        user={selectedUser}
+        isOpen={isModalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveUser}
+      />
     </div>
   );
 };

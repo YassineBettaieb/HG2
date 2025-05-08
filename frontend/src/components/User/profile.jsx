@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export const Profile = () => {
   const user = {
@@ -8,6 +8,14 @@ export const Profile = () => {
     role: "Client",
     profilePicture: "img/user-placeholder.png",
   };
+
+  const [currentReservation, setCurrentReservation] = useState({
+    id: 4,
+    time: "2025-05-10 14:00",
+    barberName: "Mohamed Hajjem",
+    price: "35 TND",
+    status: "accepted", // can be 'accepted', 'refused', or 'onhold'
+  });
 
   const reservations = [
     {
@@ -29,6 +37,49 @@ export const Profile = () => {
       price: "20 TND",
     },
   ];
+
+  // Countdown timer for current reservation
+  const [timeLeft, setTimeLeft] = useState("");
+  
+  useEffect(() => {
+    if (currentReservation) {
+      const timer = setInterval(() => {
+        const now = new Date();
+        const reservationTime = new Date(currentReservation.time);
+        const diff = reservationTime - now;
+        
+        if (diff <= 0) {
+          clearInterval(timer);
+          setTimeLeft("Reservation time has passed");
+          return;
+        }
+        
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeLeft(`${days}d ${hours}h ${minutes}m`);
+      }, 1000);
+      
+      return () => clearInterval(timer);
+    }
+  }, [currentReservation]);
+
+  const handleCancelReservation = () => {
+    if (window.confirm("Are you sure you want to cancel this reservation?")) {
+      setCurrentReservation(null);
+      alert("Reservation cancelled successfully");
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'accepted': return 'green';
+      case 'refused': return 'red';
+      case 'onhold': return 'orange';
+      default: return 'gray';
+    }
+  };
 
   return (
     <div>
@@ -157,7 +208,70 @@ export const Profile = () => {
             </div>
           </div>
 
-          {/* Reservation Dashboard */}
+          {/* Current Reservation Dashboard */}
+          {currentReservation && (
+            <div
+              style={{
+                marginTop: "50px",
+                border: "2px solid #6A82FB",
+                borderRadius: "12px",
+                padding: "30px",
+                backgroundColor: "#fdfdfd",
+              }}
+            >
+              <h2 style={{ fontWeight: "bold", marginBottom: "20px" }}>
+                Current Reservation
+              </h2>
+              <div style={{ overflowX: "auto" }}>
+                <table className="table" style={{ width: "100%" }}>
+                  <thead style={{ backgroundColor: "#6A82FB", color: "white" }}>
+                    <tr>
+                      <th>Barber</th>
+                      <th>Reserved Time</th>
+                      <th>Time Left</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{currentReservation.barberName}</td>
+                      <td>{currentReservation.time}</td>
+                      <td>{timeLeft}</td>
+                      <td>
+                        <span style={{
+                          padding: "5px 10px",
+                          borderRadius: "12px",
+                          backgroundColor: getStatusColor(currentReservation.status),
+                          color: "white",
+                          fontWeight: "bold"
+                        }}>
+                          {currentReservation.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          onClick={handleCancelReservation}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#f44336",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "4px",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Reservation History */}
           <div
             style={{
               marginTop: "50px",

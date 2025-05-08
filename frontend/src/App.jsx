@@ -43,6 +43,9 @@ import { TeamA } from "./components/Admin/Team";
 import { ContactA } from "./components/Admin/contact";
 import { ManageUsers } from "./components/Admin/ManageUsers";
 import ManageBarbers from "./components/Admin/ManageBarbers";
+import ManageAppointments from "./components/Admin/ManageAppointments";
+
+
 
 import { NavigationB } from "./components/Barber/navigation";
 import {ProfileB} from "./components/Barber/profileB";
@@ -192,6 +195,7 @@ const App = () => {
         <Route path="/BarberEditProfile" element={<BarberEditProfile />} />
         <Route path="/ManageUsers" element={<ManageUsers />} />
         <Route path="/ManageBarbers" element={<ManageBarbers />} />
+        <Route path="/ManageAppointments" element={<ManageAppointments />} />
         <Route path="/PublicBarberProfile" element={<PublicBarberProfile />} />
         <Route path="/AssistantEditProfile" element={<AssistantEditProfile />} />
         <Route path="/AssistantManageProfile" element={<AssistantManageProfile />} />

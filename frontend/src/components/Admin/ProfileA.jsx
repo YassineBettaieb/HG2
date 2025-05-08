@@ -204,7 +204,7 @@ export const ProfileA = () => {
                   <div key={i} className="list-item">{a}</div>
                 ))}
               </div>
-              <a href="/admin/manage-appointments" className="dashboard-link">Manage Appointments</a>
+              <a href="/ManageAppointments" className="dashboard-link">Manage Appointments</a>
             </section>
           </div>
         </main>

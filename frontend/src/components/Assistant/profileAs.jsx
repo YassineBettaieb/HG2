@@ -10,9 +10,6 @@ export const ProfileAs = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-
-  
-
   // Fetch assistant data on component mount
   useEffect(() => {
     const fetchAssistantData = async () => {
@@ -48,6 +45,12 @@ export const ProfileAs = () => {
       toast.error("Failed to update status");
       console.error("Status update error:", error);
     }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    // You might want to add logout logic here (clear tokens, etc.)
+    navigate("/");
   };
 
   // Loading state
@@ -190,11 +193,31 @@ export const ProfileAs = () => {
                   fontWeight: "bold",
                   marginTop: "10px",
                   display: "inline-block",
-                  textDecoration: "none"
+                  textDecoration: "none",
+                  marginBottom: "10px"
                 }}
               >
                 ✏️ Edit Profile
               </a>
+
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="btn btn-custom btn-block"
+                style={{
+                  background: "linear-gradient(to right, #f44336, #d32f2f)",
+                  color: "#fff",
+                  borderRadius: "20px",
+                  padding: "10px 20px",
+                  fontWeight: "bold",
+                  display: "inline-block",
+                  border: "none",
+                  cursor: "pointer",
+                  width: "100%"
+                }}
+              >
+                🚪 Logout
+              </button>
             </div>
 
             {/* Right Panel */}
