@@ -1,51 +1,91 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 export const Profile = () => {
-  const user = {
-    name: "John Doe",
-    email: "johndoe@example.com",
-    phone: "+216 55 123 456",
-    role: "Client",
-    profilePicture: "img/user-placeholder.png",
-  };
+  const [user, setUser] = useState(null);
+  const [currentReservation, setCurrentReservation] = useState(null);
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
+  const navigate = useNavigate();
 
-  const [currentReservation, setCurrentReservation] = useState({
-    id: 4,
-    time: "2025-05-10 14:00",
-    barberName: "Mohamed Hajjem",
-    price: "35 TND",
-    status: "accepted", // can be 'accepted', 'refused', or 'onhold'
+  // Create axios instance with base configuration
+  const api = axios.create({
+    baseURL: "http://localhost:5000/api", // Update with your backend URL
+    headers: {
+      "Content-Type": "application/json",
+    }
   });
 
-  const reservations = [
-    {
-      id: 1,
-      time: "2025-05-04 14:00",
-      barberName: "Ali Hajjem",
-      price: "25 TND",
-    },
-    {
-      id: 2,
-      time: "2025-04-28 16:30",
-      barberName: "Karim Ben Said",
-      price: "30 TND",
-    },
-    {
-      id: 3,
-      time: "2025-04-15 11:00",
-      barberName: "Mehdi Trabelsi",
-      price: "20 TND",
-    },
-  ];
+  // Fetch user data and reservations
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+        
+        if (!token || !userId) {
+          console.error("Missing authentication data");
+          navigate("/login");
+          return;
+        }
+
+        // Add token to headers for this request
+        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+        // 1. First fetch user data
+        const userResponse = await api.get(`/user/${userId}`);
+        if (!userResponse.data) {
+          throw new Error("User data not found");
+        }
+        setUser(userResponse.data);
+
+        // 2. Then fetch user's reservations
+        const reservationsResponse = await api.get(`/reservation/user/${userId}`);
+        const allReservations = reservationsResponse.data;
+        
+        // Process reservations
+        const now = new Date();
+        const upcomingReservations = allReservations
+          .filter(res => new Date(res.date) >= now)
+          .sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        if (upcomingReservations.length > 0) {
+          setCurrentReservation(upcomingReservations[0]);
+        }
+        
+        const pastReservations = allReservations
+          .filter(res => new Date(res.date) < now)
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        setReservations(pastReservations);
+        
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+        setError(err.response?.data?.message || "Failed to load profile data");
+        if (err.response?.status === 401) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          navigate("/login");
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+
 
   // Countdown timer for current reservation
-  const [timeLeft, setTimeLeft] = useState("");
-  
   useEffect(() => {
     if (currentReservation) {
       const timer = setInterval(() => {
         const now = new Date();
-        const reservationTime = new Date(currentReservation.time);
+        const reservationTime = new Date(currentReservation.date);
         const diff = reservationTime - now;
         
         if (diff <= 0) {
@@ -65,21 +105,70 @@ export const Profile = () => {
     }
   }, [currentReservation]);
 
-  const handleCancelReservation = () => {
+  const handleCancelReservation = async () => {
     if (window.confirm("Are you sure you want to cancel this reservation?")) {
-      setCurrentReservation(null);
-      alert("Reservation cancelled successfully");
+      try {
+        await api.delete(`/api/reservation/${currentReservation._id}`);
+
+        setCurrentReservation(null);
+        alert("Reservation cancelled successfully");
+      } catch (err) {
+        alert(err.response?.data?.message || "Failed to cancel reservation");
+      }
     }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'accepted': return 'green';
-      case 'refused': return 'red';
-      case 'onhold': return 'orange';
-      default: return 'gray';
+      case 'confirmed': return '#4CAF50';
+      case 'cancelled': return '#F44336';
+      case 'pending': return '#FF9800';
+      case 'completed': return '#2196F3';
+      default: return '#9E9E9E';
     }
   };
+
+  if (loading) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      fontSize: '1.5rem'
+    }}>
+      Loading...
+    </div>
+  );
+
+  if (error) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      color: 'red',
+      fontSize: '1.5rem'
+    }}>
+      Error: {error}
+    </div>
+  );
+
+  if (!user) return (
+    <div style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh',
+      fontSize: '1.5rem'
+    }}>
+      No user data found
+    </div>
+  );
 
   return (
     <div>
@@ -121,7 +210,7 @@ export const Profile = () => {
       {/* Profile Section */}
       <div id="profile" style={{ paddingTop: "100px", paddingBottom: "50px" }}>
         <div className="container">
-          <div className="row" style={{ display: "flex", gap: "20px" }}>
+          <div className="row" style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
             {/* Left Container */}
             <div
               className="col-xs-12 col-md-4 text-center"
@@ -130,10 +219,12 @@ export const Profile = () => {
                 borderRadius: "12px",
                 padding: "30px 15px",
                 backgroundColor: "#f9f9f9",
+                flex: "1",
+                minWidth: "300px"
               }}
             >
               <img
-                src="/img/CS2.2.jpg"
+                src={user.profileImage || "/img/user-placeholder.png"}
                 alt="Profile"
                 className="img-responsive img-circle"
                 style={{
@@ -147,7 +238,7 @@ export const Profile = () => {
               <h3 style={{ marginTop: "20px", fontWeight: "bold" }}>
                 {user.name}
               </h3>
-              <p style={{ color: "#555" }}>{user.role}</p>
+              <p style={{ color: "#555" }}>Client</p>
             </div>
 
             {/* Right Container */}
@@ -158,6 +249,8 @@ export const Profile = () => {
                 borderRadius: "12px",
                 padding: "30px 25px",
                 backgroundColor: "#f9f9f9",
+                flex: "2",
+                minWidth: "300px"
               }}
             >
               <div className="about-text">
@@ -166,10 +259,10 @@ export const Profile = () => {
                   <strong>Email:</strong> {user.email}
                 </p>
                 <p>
-                  <strong>Phone:</strong> {user.phone}
+                  <strong>Phone:</strong> {user.phone || "Not provided"}
                 </p>
                 <p>
-                  <strong>Role:</strong> {user.role}
+                  <strong>Role:</strong> Client
                 </p>
 
                 <div style={{ marginTop: "20px" }}>
@@ -178,19 +271,20 @@ export const Profile = () => {
                     className="btn btn-custom btn-lg page-scroll"
                     style={{
                       marginRight: "10px",
-                      background:
-                        "linear-gradient(to right, #6A82FB, #56CCF2)",
+                      background: "linear-gradient(to right, #6A82FB, #56CCF2)",
                       border: "none",
                       borderRadius: "20px",
                       color: "#fff",
                       padding: "10px 20px",
                       marginBottom: "10px",
+                      textDecoration: "none",
+                      display: "inline-block"
                     }}
                   >
                     EDIT PROFILE
                   </a>
-                  <a
-                    href="/"
+                  <button
+                    onClick={handleLogout}
                     className="btn btn-custom btn-lg page-scroll"
                     style={{
                       background: "linear-gradient(to right, #6A82FB, #56CCF2)",
@@ -199,10 +293,11 @@ export const Profile = () => {
                       color: "#fff",
                       padding: "10px 20px",
                       marginBottom: "10px",
+                      cursor: "pointer"
                     }}
                   >
                     LOGOUT
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -235,8 +330,8 @@ export const Profile = () => {
                   </thead>
                   <tbody>
                     <tr>
-                      <td>{currentReservation.barberName}</td>
-                      <td>{currentReservation.time}</td>
+                      <td>{currentReservation.barber?.name || "Unknown Barber"}</td>
+                      <td>{new Date(currentReservation.date).toLocaleString()}</td>
                       <td>{timeLeft}</td>
                       <td>
                         <span style={{
@@ -260,6 +355,7 @@ export const Profile = () => {
                             borderRadius: "4px",
                             cursor: "pointer"
                           }}
+                          disabled={currentReservation.status === "cancelled" || currentReservation.status === "completed"}
                         >
                           Cancel
                         </button>
@@ -284,24 +380,43 @@ export const Profile = () => {
             <h2 style={{ fontWeight: "bold", marginBottom: "20px" }}>
               Reservation History
             </h2>
-            <table className="table table-bordered">
-              <thead style={{ backgroundColor: "#6A82FB", color: "white" }}>
-                <tr>
-                  <th>Time</th>
-                  <th>Barber</th>
-                  <th>Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {reservations.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.time}</td>
-                    <td>{r.barberName}</td>
-                    <td>{r.price}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {reservations.length > 0 ? (
+              <div style={{ overflowX: "auto" }}>
+                <table className="table table-bordered" style={{ width: "100%" }}>
+                  <thead style={{ backgroundColor: "#6A82FB", color: "white" }}>
+                    <tr>
+                      <th>Time</th>
+                      <th>Barber</th>
+                      <th>Service</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reservations.map((r) => (
+                      <tr key={r._id}>
+                        <td>{new Date(r.date).toLocaleString()}</td>
+                        <td>{r.barber?.name || "Unknown Barber"}</td>
+                        <td>{r.service}</td>
+                        <td>
+                          <span style={{
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            backgroundColor: getStatusColor(r.status),
+                            color: "white",
+                            fontSize: "0.9em",
+                            display: "inline-block"
+                          }}>
+                            {r.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p style={{ textAlign: "center", fontSize: "1.1rem" }}>No past reservations found</p>
+            )}
           </div>
         </div>
       </div>
